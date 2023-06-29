@@ -3,6 +3,7 @@ import numpy as np
 import ctypes
 pygame.init()
 
+#init some constances using in game
 WIDTH = 600
 HEIGHT = 600
 LINE_WIDTH = 3
@@ -14,7 +15,7 @@ CIRCLE_RADIUS = 10
 CIRCLE_WIDTH = 3
 CROSS_WIDTH = 3
 SPACE = 23
-# board = [[int(0)] * BOARD_SIZE] * BOARD_SIZE
+
 winScore = 1000000000
 
 RED = (255, 0, 0)
@@ -23,20 +24,22 @@ LINE_COLOR = (23, 145, 135)
 CIRCLE_COLOR = (239, 231, 200)
 CROSS_COLOR = (255, 130, 71)
 
+#setting up the window game
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('TIC TAC TOE')
 screen.fill(BackGround_COLOR)
 
-# Hàm kẻ bảng bàn cờ
+# draw board
 def draw_lines():
     for j in range(1, BOARD_SIZE):
         pygame.draw.line(screen, LINE_COLOR, (0, j * SQUARE_SIZE), (WIDTH, j * SQUARE_SIZE), LINE_WIDTH)
         pygame.draw.line(screen, LINE_COLOR, (j * SQUARE_SIZE, 0), (j * SQUARE_SIZE, HEIGHT), LINE_WIDTH)
 
-# Hàm vẽ XO
-x_img = pygame.transform.smoothscale(pygame.image.load("x_icon.png").convert(),(28,28))
-o_img = pygame.transform.smoothscale(pygame.image.load("o_icon.png").convert(),(28,28))
 
+# x_img = pygame.transform.smoothscale(pygame.image.load("x_icon.png").convert(),(28,28))
+# o_img = pygame.transform.smoothscale(pygame.image.load("o_icon.png").convert(),(28,28))
+
+#draw 'x' icon and 'o' icon
 def draw_figures(board):
     for row in range(BOARD_SIZE):
         for col in range(BOARD_SIZE):
@@ -52,32 +55,36 @@ def draw_figures(board):
                 pygame.draw.line(screen, CROSS_COLOR, (col * SQUARE_SIZE + SPACE, row * SQUARE_SIZE + SPACE),
                                  (col * SQUARE_SIZE + SQUARE_SIZE - SPACE, row * SQUARE_SIZE + SQUARE_SIZE - SPACE),
                                  CROSS_WIDTH)
-# Đánh số 1, 2 trong matrix board
+# mark square when a cell had been moved before
 def mark_square(row, col, player):
     board[row][col] = player
 
-
+# check the condition of the cell is available
 def available_square(row, col):
     return board[row][col] == 0
 
+#handling player move
 def returnMove(listMove):
     global moves
     for move in listMove:
         moves.remove((move[0], move[1]))
 
+#determine available moves
 def available_moves(matrix):
     moves = list()
     for row in range(BOARD_SIZE):
         for col in range(BOARD_SIZE):
             if matrix[row][col] != 0:
                 if row + 1 < BOARD_SIZE:
+                    #check diagonal and adjacent squares
                     if col - 1 >= 0 and matrix[row+1][col-1] == 0 and (row+1, col-1) not in moves:
                         moves.append((row + 1, col - 1))
                     if col + 1 < BOARD_SIZE and matrix[row+1][col+1] == 0 and (row+1, col+1) not in moves:
                         moves.append((row + 1, col + 1))
                     if matrix[row+1][col] == 0 and (row+1, col) not in moves:
-                        moves.append((row+1, col))
+                        moves.append((row+1, col))                
                 if row - 1 >= 0:
+                    #check diagonal and adjacent squares
                     if col - 1 >= 0 and matrix[row - 1][col - 1] == 0 and (row - 1, col - 1) not in moves:
                         moves.append((row - 1, col - 1))
                     if col + 1 < BOARD_SIZE and matrix[row - 1][col + 1] == 0 and (row - 1, col + 1) not in moves:
@@ -90,13 +97,14 @@ def available_moves(matrix):
                     moves.append((row, col+1))
     return moves
 
+#the current state of the board
 def printBoard(board):
     for row in range(BOARD_SIZE):
         for col in range(BOARD_SIZE):
             print(board[row][col], end=" ")
         print()
 
-# Hàm dùng giải thuật minimax - alpha-beta
+# minmax algorithms using alpha-beta prunning
 def minimax(matrix, depth, maximizingPlayer):
     return alphabeta(matrix, depth, -10000000000, 10000000000, maximizingPlayer)
 
@@ -144,11 +152,11 @@ def restart():
         for col in range(BOARD_SIZE):
             board[row][col] = int(0)
 
-# Hàm đánh giá trạng thái bàn cờ
+# evaluate the scrore of the cell in current state board
 def evaluateBoard(matrix, player):
     return evaluateDiagonal(matrix, player) + evaluateHorizontal(matrix, player) + evaluateVertical(matrix, player)
 
-#Hàm đánh giá hàng ngang
+# evaluate the score of the self by horizontal
 def evaluateHorizontal(matrix, player):
     consecutive = 0
     blocks = 2
@@ -177,7 +185,7 @@ def evaluateHorizontal(matrix, player):
         consecutive = 0
     return score
 
-# Hàm đánh giá hàng dọc
+# evaluate the score of the self by vertical
 def evaluateVertical(matrix, player):
     consecutive = 0
     blocks = 2
@@ -206,13 +214,13 @@ def evaluateVertical(matrix, player):
         consecutive = 0
     return score
 
-# Hàm đánh giá đường chéo
+# evaluate the score of the diagonal
 def evaluateDiagonal(matrix, player):
     consecutive = 0
     blocks = 2
     score = 0
 
-    # Đánh giá đường chéo chính
+    # the first diagonal
     for i in range(1 - BOARD_SIZE, BOARD_SIZE):
         jStart = max(i, 0)
         jEnd = min(i + BOARD_SIZE - 1, BOARD_SIZE - 1)
@@ -239,7 +247,7 @@ def evaluateDiagonal(matrix, player):
         blocks = 2
         consecutive = 0
 
-    # Đánh giá đường chéo phụ
+    # the second diagonal
     for i in range(2 * (BOARD_SIZE - 1) + 1):
         jStart = max(0, i - BOARD_SIZE + 1)
         jEnd = min(BOARD_SIZE - 1, i)
@@ -267,7 +275,7 @@ def evaluateDiagonal(matrix, player):
         consecutive = 0
     return score
 
-# Hàm tính điểm cho mỗi node
+# calculate scores for each cell through emty cells around, consecutive x or o
 def getValue(count, blocks, player):
     if count >= 5:
         return -1000000000*2 if player else 1000000000*2
@@ -310,7 +318,7 @@ def value(matrix):
         return computer
     return computer
 
-# Hàm tìm nước đi thắng gần nhất(độ sâu là 1)
+# depth = 1
 def searchWinMove(matrix):
     moves = available_moves(matrix)
     res = list()
@@ -329,7 +337,7 @@ def searchWinMove(matrix):
     else:
         return None
 
-#Hàm tìm nước thua gần nhất ( độ sâu là 1)
+# depth = 1
 def searchLoseMove(matrix):
     moves = available_moves(matrix)
     res = list()
@@ -348,9 +356,10 @@ def searchLoseMove(matrix):
     else:
         return None
 
-# Hàm checkWin
+# check the win conditions
 def checkWin(matrix, player):
     for row in range(BOARD_SIZE):
+        #horizonal and vertical
         consecutiveRow = 0
         consecutiveCol = 0
         for col in range(BOARD_SIZE):
@@ -367,7 +376,7 @@ def checkWin(matrix, player):
         if consecutiveCol >= 5:
             return True
 
-        # Đánh giá đường chéo chính
+        # the first diagonal
         for i in range(1 - BOARD_SIZE, BOARD_SIZE):
             jStart = max(i, 0)
             jEnd = min(i + BOARD_SIZE - 1, BOARD_SIZE - 1)
@@ -382,7 +391,7 @@ def checkWin(matrix, player):
                 return True
 
 
-        # Đánh giá đường chéo phụ
+        # the second diagonal
         for i in range(2 * (BOARD_SIZE - 1) + 1):
             jStart = max(0, i - BOARD_SIZE + 1)
             jEnd = min(BOARD_SIZE - 1, i)
